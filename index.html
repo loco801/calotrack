@@ -1,0 +1,1952 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Flame,
+  Beef,
+  Droplets,
+  Wheat,
+  Calendar as CalendarIcon,
+  Plus,
+  Trash2,
+  Edit3,
+  Check,
+  X,
+  Search,
+  User,
+  Scale,
+  Ruler,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Utensils,
+  Award,
+  RefreshCw,
+  ArrowRight,
+  Sparkles
+} from 'lucide-react';
+
+// ==========================================
+// CƠ SỞ DỮ LIỆU MÓN ĂN PHỔ BIẾN (TRÊN 100G)
+// ==========================================
+const DEFAULT_FOOD_DB = [
+  // Nhóm giàu Protein & Thực phẩm giảm cân
+  { id: 'uc-ga-luoc', name: 'Ức gà luộc / áp chảo (không da)', category: 'Đạm & Thịt', cal: 165, protein: 31, fat: 3.6, carb: 0 },
+  { id: 'uc-ga-song', name: 'Ức gà tươi (cân sống)', category: 'Đạm & Thịt', cal: 120, protein: 22.5, fat: 2.6, carb: 0 },
+  { id: 'thit-bo-than', name: 'Thịt bò thăn nạc', category: 'Đạm & Thịt', cal: 143, protein: 26, fat: 3.5, carb: 0 },
+  { id: 'thit-bo-xao', name: 'Thịt bò xào', category: 'Đạm & Thịt', cal: 195, protein: 24, fat: 10.5, carb: 1.2 },
+  { id: 'thit-heo-nac', name: 'Thịt heo nạc thăn luộc', category: 'Đạm & Thịt', cal: 145, protein: 27, fat: 3.8, carb: 0 },
+  { id: 'thit-ba-chi', name: 'Thịt ba chỉ heo (ba rọi)', category: 'Đạm & Thịt', cal: 290, protein: 16.5, fat: 25, carb: 0 },
+  { id: 'ca-hoi', name: 'Cá hồi áp chảo / nướng', category: 'Đạm & Thịt', cal: 208, protein: 20.4, fat: 13.4, carb: 0 },
+  { id: 'ca-basa', name: 'Cá basa / Cá rô phi phi lê', category: 'Đạm & Thịt', cal: 128, protein: 26, fat: 2.7, carb: 0 },
+  { id: 'tom-tuoi', name: 'Tôm hấp / luộc (bỏ vỏ)', category: 'Đạm & Thịt', cal: 99, protein: 24, fat: 0.3, carb: 0.2 },
+  { id: 'trung-ga-luoc', name: 'Trứng gà luộc (cả quả ~50g/quả)', category: 'Đạm & Thịt', cal: 155, protein: 13, fat: 11, carb: 1.1 },
+  { id: 'long-trang-trung', name: 'Lòng trắng trứng gà', category: 'Đạm & Thịt', cal: 52, protein: 11, fat: 0.2, carb: 0.7 },
+  { id: 'dau-hu-trang', name: 'Đậu hũ trắng (Đậu phụ)', category: 'Đạm & Thịt', cal: 76, protein: 8, fat: 4.8, carb: 1.9 },
+  { id: 'whey-protein', name: 'Bột Whey Protein Isolate', category: 'Đạm & Thịt', cal: 370, protein: 82, fat: 1.5, carb: 4 },
+
+  // Nhóm Tinh bột (Carb)
+  { id: 'com-trang', name: 'Cơm trắng (đã nấu chín)', category: 'Tinh bột', cal: 130, protein: 2.7, fat: 0.3, carb: 28.2 },
+  { id: 'com-gao-lut', name: 'Cơm gạo lứt (đã nấu chín)', category: 'Tinh bột', cal: 111, protein: 2.6, fat: 0.9, carb: 23 },
+  { id: 'khoai-lang-luoc', name: 'Khoai lang luộc', category: 'Tinh bột', cal: 86, protein: 1.6, fat: 0.1, carb: 20.1 },
+  { id: 'yen-mach', name: 'Yến mạch cán dẹt (cân khô)', category: 'Tinh bột', cal: 389, protein: 16.9, fat: 6.9, carb: 66.3 },
+  { id: 'banh-mi-nguyen-cam', name: 'Bánh mì nguyên cám / đen', category: 'Tinh bột', cal: 247, protein: 13, fat: 3.4, carb: 41 },
+  { id: 'banh-mi-vn', name: 'Bánh mì trắng Việt Nam (1 ổ ~90g)', category: 'Tinh bột', cal: 275, protein: 8.8, fat: 3.0, carb: 53 },
+  { id: 'bun-tuoi', name: 'Bún tươi (sợi bún trắng)', category: 'Tinh bột', cal: 110, protein: 1.8, fat: 0.2, carb: 25 },
+  { id: 'ngo-luoc', name: 'Bắp (Ngô) ngọt luộc', category: 'Tinh bột', cal: 96, protein: 3.4, fat: 1.5, carb: 21 },
+
+  // Món ăn Việt Nam phổ biến (Tính trung bình trên 100g khẩu phần ăn)
+  { id: 'pho-bo', name: 'Phở bò (1 tô trung bình ~500g)', category: 'Món Việt', cal: 95, protein: 6.2, fat: 3.1, carb: 10.5 },
+  { id: 'bun-bo-hue', name: 'Bún bò Huế (1 tô ~550g)', category: 'Món Việt', cal: 115, protein: 6.8, fat: 4.5, carb: 11.8 },
+  { id: 'bun-rieu-cua', name: 'Bún riêu cua (1 tô ~500g)', category: 'Món Việt', cal: 98, protein: 5.5, fat: 3.6, carb: 10.8 },
+  { id: 'com-ga-xoi-mo', name: 'Cơm gà (1 dĩa ~350g)', category: 'Món Việt', cal: 175, protein: 11.5, fat: 6.5, carb: 17.5 },
+  { id: 'com-tam-suon', name: 'Cơm tấm sườn nướng (1 dĩa ~380g)', category: 'Món Việt', cal: 185, protein: 10.8, fat: 7.2, carb: 19.2 },
+  { id: 'mi-cay', name: 'Mì cay hải sản / bò (1 tô ~550g)', category: 'Món Việt', cal: 125, protein: 5.8, fat: 4.8, carb: 14.6 },
+  { id: 'banh-mi-thit', name: 'Bánh mì thịt nguội / chả (1 ổ ~200g)', category: 'Món Việt', cal: 235, protein: 10.5, fat: 9.2, carb: 27.5 },
+  { id: 'goi-cuon', name: 'Gỏi cuốn tôm thịt (1 cuốn ~70g)', category: 'Món Việt', cal: 110, protein: 6.5, fat: 2.1, carb: 16.2 },
+  { id: 'hu-tieu', name: 'Hủ tiếu Nam Vang (1 tô ~500g)', category: 'Món Việt', cal: 102, protein: 6.0, fat: 3.2, carb: 12.2 },
+
+  // Rau củ & Trái cây & Chất béo tốt
+  { id: 'bong-cai-xanh', name: 'Bông cải xanh (Súp lơ) luộc', category: 'Rau & Trái cây', cal: 35, protein: 2.4, fat: 0.4, carb: 7.2 },
+  { id: 'rau-luoc', name: 'Rau muống / Rau cải luộc', category: 'Rau & Trái cây', cal: 22, protein: 2.1, fat: 0.2, carb: 3.6 },
+  { id: 'dua-leo', name: 'Dưa leo (Dưa chuột) tươi', category: 'Rau & Trái cây', cal: 15, protein: 0.7, fat: 0.1, carb: 3.6 },
+  { id: 'chuoi-chin', name: 'Chuối chín (1 quả vừa ~100g)', category: 'Rau & Trái cây', cal: 89, protein: 1.1, fat: 0.3, carb: 22.8 },
+  { id: 'tao-tuoi', name: 'Táo tươi', category: 'Rau & Trái cây', cal: 52, protein: 0.3, fat: 0.2, carb: 13.8 },
+  { id: 'bo-sap', name: 'Quả bơ sáp', category: 'Chất béo & Sữa', cal: 160, protein: 2.0, fat: 14.7, carb: 8.5 },
+  { id: 'sua-tuoi-khong-duong', name: 'Sữa tươi không đường', category: 'Chất béo & Sữa', cal: 60, protein: 3.2, fat: 3.3, carb: 4.8 },
+  { id: 'sua-chua-hy-lap', name: 'Sữa chua Hy Lạp (Greek Yogurt)', category: 'Chất béo & Sữa', cal: 97, protein: 9.0, fat: 5.0, carb: 3.9 },
+  { id: 'hat-hanh-nhan', name: 'Hạt hạnh nhân / Hạt điều rang', category: 'Chất béo & Sữa', cal: 579, protein: 21.2, fat: 49.9, carb: 21.6 },
+  { id: 'dau-oli-u', name: 'Dầu ô liu / Dầu ăn', category: 'Chất béo & Sữa', cal: 884, protein: 0, fat: 100, carb: 0 }
+];
+
+const MEAL_TYPES = [
+  { id: 'breakfast', label: 'Bữa sáng', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+  { id: 'lunch', label: 'Bữa trưa', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
+  { id: 'dinner', label: 'Bữa tối', color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' },
+  { id: 'snack', label: 'Bữa phụ', color: 'bg-pink-500/15 text-pink-400 border-pink-500/30' }
+];
+
+const ACTIVITY_LEVELS = [
+  {
+    id: 'low',
+    label: 'Vận động ít',
+    multiplier: 30,
+    desc: 'Làm văn phòng, đi học'
+  },
+  {
+    id: 'medium',
+    label: 'Vận động trung bình',
+    multiplier: 32,
+    desc: 'Có chơi thể thao ở tần suất ổn định'
+  },
+  {
+    id: 'high',
+    label: 'Vận động nhiều',
+    multiplier: 35,
+    desc: 'Chơi thể thao cường độ cao, làm công việc mang tính chất vận động thường xuyên'
+  }
+];
+
+const QUICK_ESTIMATE_SAMPLES = [
+  '1 tô bún bò Huế',
+  '1 đĩa cơm gà xối mỡ',
+  'Nửa ổ bánh mì thịt',
+  '2 quả trứng gà luộc',
+  '1 ly cà phê sữa đá',
+  '1 tô phở bò tái nạm'
+];
+
+// Hàm hỗ trợ định dạng ngày YYYY-MM-DD theo múi giờ địa phương
+const formatDateKey = (dateObj) => {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Hàm hiển thị ngày tiếng Việt đẹp mắt
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  return `${days[date.getDay()]}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+};
+
+// Dữ liệu mẫu khởi tạo để lịch theo dõi trực quan ngay lần đầu mở
+const generateInitialSampleLogs = (todayKey) => {
+  const [y, m, d] = todayKey.split('-').map(Number);
+  const getOffsetKey = (offsetDays) => {
+    const dt = new Date(y, m - 1, d + offsetDays);
+    return formatDateKey(dt);
+  };
+
+  return {
+    [todayKey]: [
+      {
+        id: 'sample-1',
+        name: 'Ức gà luộc / áp chảo (không da)',
+        grams: 250,
+        mealType: 'lunch',
+        per100g: { cal: 165, protein: 31, fat: 3.6, carb: 0 }
+      },
+      {
+        id: 'sample-2',
+        name: 'Cơm gạo lứt (đã nấu chín)',
+        grams: 200,
+        mealType: 'lunch',
+        per100g: { cal: 111, protein: 2.6, fat: 0.9, carb: 23 }
+      },
+      {
+        id: 'sample-3',
+        name: 'Trứng gà luộc (cả quả ~50g/quả)',
+        grams: 100,
+        mealType: 'breakfast',
+        per100g: { cal: 155, protein: 13, fat: 11, carb: 1.1 }
+      },
+      {
+        id: 'sample-4',
+        name: 'Khoai lang luộc',
+        grams: 180,
+        mealType: 'breakfast',
+        per100g: { cal: 86, protein: 1.6, fat: 0.1, carb: 20.1 }
+      }
+    ],
+    [getOffsetKey(-1)]: [
+      {
+        id: 'sample-prev1-1',
+        name: 'Phở bò (1 tô trung bình ~500g)',
+        grams: 500,
+        mealType: 'breakfast',
+        per100g: { cal: 95, protein: 6.2, fat: 3.1, carb: 10.5 }
+      },
+      {
+        id: 'sample-prev1-2',
+        name: 'Ức gà luộc / áp chảo (không da)',
+        grams: 300,
+        mealType: 'lunch',
+        per100g: { cal: 165, protein: 31, fat: 3.6, carb: 0 }
+      },
+      {
+        id: 'sample-prev1-3',
+        name: 'Cơm trắng (đã nấu chín)',
+        grams: 250,
+        mealType: 'lunch',
+        per100g: { cal: 130, protein: 2.7, fat: 0.3, carb: 28.2 }
+      },
+      {
+        id: 'sample-prev1-4',
+        name: 'Cá hồi áp chảo / nướng',
+        grams: 180,
+        mealType: 'dinner',
+        per100g: { cal: 208, protein: 20.4, fat: 13.4, carb: 0 }
+      }
+    ],
+    [getOffsetKey(-2)]: [
+      {
+        id: 'sample-prev2-1',
+        name: 'Bún bò Huế (1 tô ~550g)',
+        grams: 600,
+        mealType: 'breakfast',
+        per100g: { cal: 115, protein: 6.8, fat: 4.5, carb: 11.8 }
+      },
+      {
+        id: 'sample-prev2-2',
+        name: 'Cơm tấm sườn nướng (1 dĩa ~380g)',
+        grams: 450,
+        mealType: 'lunch',
+        per100g: { cal: 185, protein: 10.8, fat: 7.2, carb: 19.2 }
+      },
+      {
+        id: 'sample-prev2-3',
+        name: 'Mì cay hải sản / bò (1 tô ~550g)',
+        grams: 550,
+        mealType: 'dinner',
+        per100g: { cal: 125, protein: 5.8, fat: 4.8, carb: 14.6 }
+      }
+    ],
+    [getOffsetKey(-3)]: [
+      {
+        id: 'sample-prev3-1',
+        name: 'Yến mạch cán dẹt (cân khô)',
+        grams: 80,
+        mealType: 'breakfast',
+        per100g: { cal: 389, protein: 16.9, fat: 6.9, carb: 66.3 }
+      },
+      {
+        id: 'sample-prev3-2',
+        name: 'Ức gà luộc / áp chảo (không da)',
+        grams: 200,
+        mealType: 'lunch',
+        per100g: { cal: 165, protein: 31, fat: 3.6, carb: 0 }
+      },
+      {
+        id: 'sample-prev3-3',
+        name: 'Khoai lang luộc',
+        grams: 200,
+        mealType: 'dinner',
+        per100g: { cal: 86, protein: 1.6, fat: 0.1, carb: 20.1 }
+      }
+    ]
+  };
+};
+
+export default function App() {
+  const todayKey = useMemo(() => formatDateKey(new Date()), []);
+
+  // 1. State Hồ sơ cá nhân & Công thức tính Calo/Macro
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nutricut_profile_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          height: 170,
+          weight: 72,
+          bodyType: 'beo',
+          activityLevel: 'medium',
+          ...parsed
+        };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return {
+      height: 170,
+      weight: 72,
+      bodyType: 'beo', // 'beo' (Cân nặng * 2) | 'gay' (Cân nặng * 3)
+      activityLevel: 'medium' // 'low' (30) | 'medium' (32) | 'high' (35)
+    };
+  });
+
+  // 2. Danh sách thực phẩm (Mặc định + Người dùng/AI thêm)
+  const [customFoods, setCustomFoods] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nutricut_custom_foods_v1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
+  const allFoods = useMemo(() => [...customFoods, ...DEFAULT_FOOD_DB], [customFoods]);
+
+  // 3. Nhật ký ăn uống theo ngày (YYYY-MM-DD -> Array of items)
+  const [dailyLogs, setDailyLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nutricut_daily_logs_v1');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return generateInitialSampleLogs(todayKey);
+  });
+
+  // Ngày đang được chọn để xem/nhập nhật ký
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+
+  // Tháng đang hiển thị trên lịch theo dõi
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
+
+  // ==========================================================
+  // TÍNH TOÁN CHỈ TIÊU CALO & MACRO THEO ĐÚNG CÔNG THỨC YÊU CẦU
+  // ==========================================================
+  const macroTargets = useMemo(() => {
+    const weight = Math.max(0, Number(profile.weight) || 0);
+    const height = Math.max(0, Number(profile.height) || 0);
+
+    const activityObj =
+      ACTIVITY_LEVELS.find((a) => a.id === profile.activityLevel) ||
+      ACTIVITY_LEVELS[1];
+    const activityMultiplier = activityObj.multiplier;
+
+    // 1. Tổng lượng calo cần nạp: (Cân nặng * Hệ số vận động) - 500
+    const rawTotalCalories = weight * activityMultiplier - 500;
+    const totalCalories = Math.max(0, rawTotalCalories);
+
+    // 2. Protein: Béo -> Cân nặng * 2 | Gầy -> Cân nặng * 3. Calo = Khối lượng đạm * 4
+    const proteinMultiplier = profile.bodyType === 'beo' ? 2 : 3;
+    const proteinGrams = weight * proteinMultiplier;
+    const proteinCalories = proteinGrams * 4;
+
+    // 3. Fat: Cân nặng * 0.77. Calo = Khối lượng fat * 9
+    const fatGrams = weight * 0.77;
+    const fatCalories = fatGrams * 9;
+
+    // 4. Carb: (Tổng lượng calo cần nạp - Calo protein - Calo fat) / 4
+    const remainingCarbCalories = totalCalories - proteinCalories - fatCalories;
+    const carbCalories = Math.max(0, remainingCarbCalories);
+    const carbGrams = carbCalories / 4;
+
+    // BMI tham khảo
+    const heightM = height > 0 ? height / 100 : 1.7;
+    const bmi = weight > 0 ? weight / (heightM * heightM) : 0;
+
+    return {
+      weight,
+      height,
+      bmi,
+      activityObj,
+      activityMultiplier,
+      totalCalories,
+      rawTotalCalories,
+      proteinMultiplier,
+      proteinGrams,
+      proteinCalories,
+      fatGrams,
+      fatCalories,
+      carbGrams,
+      carbCalories,
+      remainingCarbCalories
+    };
+  }, [profile]);
+
+  // Hàm tính tổng Calo & Macro của một danh sách món ăn trong ngày
+  const calculateDayTotals = (entries = []) => {
+    return entries.reduce(
+      (acc, item) => {
+        const ratio = (Number(item.grams) || 0) / 100;
+        const pGrams = (Number(item.per100g?.protein) || 0) * ratio;
+        const fGrams = (Number(item.per100g?.fat) || 0) * ratio;
+        const cGrams = (Number(item.per100g?.carb) || 0) * ratio;
+        const cal = (Number(item.per100g?.cal) || 0) * ratio;
+
+        acc.calories += cal;
+        acc.proteinGrams += pGrams;
+        acc.proteinCalories += pGrams * 4;
+        acc.fatGrams += fGrams;
+        acc.fatCalories += fGrams * 9;
+        acc.carbGrams += cGrams;
+        acc.carbCalories += cGrams * 4;
+        return acc;
+      },
+      {
+        calories: 0,
+        proteinGrams: 0,
+        proteinCalories: 0,
+        fatGrams: 0,
+        fatCalories: 0,
+        carbGrams: 0,
+        carbCalories: 0
+      }
+    );
+  };
+
+  const currentDayEntries = useMemo(
+    () => dailyLogs[selectedDate] || [],
+    [dailyLogs, selectedDate]
+  );
+
+  const currentDayTotals = useMemo(
+    () => calculateDayTotals(currentDayEntries),
+    [currentDayEntries]
+  );
+
+  // Đánh giá trạng thái hoàn thành chỉ tiêu
+  const evaluateStatus = (current, target) => {
+    if (!target || target <= 0) {
+      return {
+        code: 'none',
+        label: 'Chưa có mục tiêu',
+        percent: 0,
+        badgeBg: 'bg-slate-800 text-slate-400 border-slate-700'
+      };
+    }
+    const percent = (current / target) * 100;
+    if (percent < 85) {
+      return {
+        code: 'under',
+        label: 'Còn thiếu',
+        percent,
+        badgeBg: 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+      };
+    }
+    if (percent <= 108) {
+      return {
+        code: 'good',
+        label: 'Đạt chỉ tiêu',
+        percent,
+        badgeBg: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+      };
+    }
+    return {
+      code: 'over',
+      label: 'Vượt mức',
+      percent,
+      badgeBg: 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+    };
+  };
+
+  // State form thêm món ăn chính xác theo gram (Cách 2)
+  const [foodQuery, setFoodQuery] = useState('');
+  const [selectedFoodItem, setSelectedFoodItem] = useState(null);
+  const [gramsInput, setGramsInput] = useState('150');
+  const [mealTypeInput, setMealTypeInput] = useState('lunch');
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // State form thêm món ăn ước lượng khẩu phần bằng AI (Cách 1)
+  const [estimateQuery, setEstimateQuery] = useState('');
+  const [estimateMealType, setEstimateMealType] = useState('lunch');
+  const [isEstimatingAI, setIsEstimatingAI] = useState(false);
+  const [estimateError, setEstimateError] = useState('');
+  const [estimateSuccess, setEstimateSuccess] = useState('');
+
+  // State tra cứu tự động cho món mới (Cách 2)
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  // State chỉnh sửa khối lượng món ăn đã thêm
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editingGrams, setEditingGrams] = useState('');
+
+  // Lưu vào LocalStorage khi thay đổi
+  useEffect(() => {
+    try {
+      localStorage.setItem('nutricut_profile_v1', JSON.stringify(profile));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nutricut_custom_foods_v1', JSON.stringify(customFoods));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [customFoods]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nutricut_daily_logs_v1', JSON.stringify(dailyLogs));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [dailyLogs]);
+
+  // ==========================================================
+  // TÍCH HỢP GEMINI API ĐỂ TRA CỨU & ƯỚC LƯỢNG MÓN ĂN TRÊN MẠNG
+  // ==========================================================
+  const fetchWithRetry = async (url, options, retries = 3) => {
+    let delay = 1000;
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) return await res.json();
+      } catch (err) {
+        if (i === retries - 1) throw err;
+      }
+      await new Promise((r) => setTimeout(r, delay));
+      delay *= 2;
+    }
+    throw new Error('Không thể kết nối tới máy chủ AI.');
+  };
+
+  // CÁCH 1: AI tự động ước lượng khối lượng (gram) và Calo/Macro khi người dùng chỉ nhập khẩu phần ước chừng
+  const handleEstimatePortionWithAI = async (e) => {
+    if (e) e.preventDefault();
+    const textPrompt = estimateQuery.trim();
+    if (!textPrompt) {
+      setEstimateError('Vui lòng nhập mô tả món ăn và khẩu phần ước lượng (VD: "1 tô bún bò Huế", "nửa ổ bánh mì thịt").');
+      return;
+    }
+
+    setIsEstimatingAI(true);
+    setEstimateError('');
+    setEstimateSuccess('');
+
+    const apiKey = '';
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+    const systemPrompt = `Bạn là chuyên gia dinh dưỡng tại Việt Nam. Người dùng sẽ nhập tên món ăn kèm khẩu phần ước lượng tự nhiên mà không biết chính xác số gram (ví dụ: "1 tô bún bò Huế", "1 đĩa cơm gà xối mỡ", "nửa ổ bánh mì thịt", "2 quả trứng luộc và 1 củ khoai lang").
+Nhiệm vụ của bạn:
+1. Tách các món ăn có trong câu mô tả của người dùng.
+2. Tự động ước tính khối lượng ăn được tương đương bằng đơn vị gram (estimatedGrams) sát với thực tế khẩu phần Việt Nam nhất.
+3. Tính tổng lượng Calo (totalCal - kcal), Đạm (totalProtein - g), Chất béo (totalFat - g), và Tinh bột (totalCarb - g) cho toàn bộ khẩu phần ước lượng đó.
+4. Ghi rõ mô tả khẩu phần (portionDesc, ví dụ: "1 tô trung bình ~500g", "1/2 ổ ~100g").`;
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            {
+              text: `Hãy ước lượng khối lượng (gram) và tính chỉ số dinh dưỡng (Calo, Protein, Fat, Carb) cho khẩu phần sau: "${textPrompt}"`
+            }
+          ]
+        }
+      ],
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            items: {
+              type: 'ARRAY',
+              items: {
+                type: 'OBJECT',
+                properties: {
+                  foodName: { type: 'STRING' },
+                  portionDesc: { type: 'STRING' },
+                  estimatedGrams: { type: 'NUMBER' },
+                  totalCal: { type: 'NUMBER' },
+                  totalProtein: { type: 'NUMBER' },
+                  totalFat: { type: 'NUMBER' },
+                  totalCarb: { type: 'NUMBER' }
+                },
+                propertyOrdering: [
+                  'foodName',
+                  'portionDesc',
+                  'estimatedGrams',
+                  'totalCal',
+                  'totalProtein',
+                  'totalFat',
+                  'totalCarb'
+                ]
+              }
+            }
+          },
+          propertyOrdering: ['items']
+        }
+      }
+    };
+
+    try {
+      const result = await fetchWithRetry(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!jsonText) throw new Error('Không nhận được phản hồi hợp lệ từ AI.');
+
+      const parsed = JSON.parse(jsonText);
+      const estimatedItems = parsed?.items || [];
+
+      if (estimatedItems.length === 0) {
+        throw new Error('AI không nhận diện được món ăn. Vui lòng mô tả rõ hơn.');
+      }
+
+      const newEntries = estimatedItems.map((item, idx) => {
+        const grams = Math.max(1, Math.round(Number(item.estimatedGrams) || 100));
+        const ratio = grams / 100;
+        const totalCal = Math.max(0, Number(item.totalCal) || 0);
+        const totalProtein = Math.max(0, Number(item.totalProtein) || 0);
+        const totalFat = Math.max(0, Number(item.totalFat) || 0);
+        const totalCarb = Math.max(0, Number(item.totalCarb) || 0);
+
+        return {
+          id: `ai-est-${Date.now()}-${idx}`,
+          name: item.foodName || textPrompt,
+          portionNote: item.portionDesc || `Ước lượng ~${grams}g`,
+          isAiEstimated: true,
+          grams,
+          mealType: estimateMealType,
+          per100g: {
+            cal: Number((totalCal / ratio).toFixed(1)),
+            protein: Number((totalProtein / ratio).toFixed(1)),
+            fat: Number((totalFat / ratio).toFixed(1)),
+            carb: Number((totalCarb / ratio).toFixed(1))
+          }
+        };
+      });
+
+      setDailyLogs((prev) => ({
+        ...prev,
+        [selectedDate]: [...(prev[selectedDate] || []), ...newEntries]
+      }));
+
+      const summaryText = newEntries
+        .map(
+          (e) =>
+            `${e.name} (~${e.grams}g: ${Math.round((e.per100g.cal * e.grams) / 100)} kcal)`
+        )
+        .join(', ');
+
+      setEstimateSuccess(`AI đã ước lượng và thêm thành công: ${summaryText}`);
+      setEstimateQuery('');
+    } catch (error) {
+      setEstimateError('Không thể ước lượng tự động lúc này. Vui lòng thử lại.');
+    } finally {
+      setIsEstimatingAI(false);
+    }
+  };
+
+  // ==========================================================
+  // THÊM / SỬA / XÓA MÓN ĂN TRONG NHẬT KÝ
+  // ==========================================================
+  const filteredFoods = useMemo(() => {
+    return allFoods.filter((f) => {
+      const matchesQuery =
+        !foodQuery.trim() ||
+        f.name.toLowerCase().includes(foodQuery.trim().toLowerCase());
+      return matchesQuery;
+    });
+  }, [allFoods, foodQuery]);
+
+  const handleAddFoodEntry = async (e) => {
+    e.preventDefault();
+    const grams = Number(gramsInput);
+    if (!grams || grams <= 0) {
+      setAiError('Vui lòng nhập khối lượng (gram) lớn hơn 0.');
+      return;
+    }
+
+    let foodToUse = selectedFoodItem;
+
+    // Nếu người dùng gõ tên trùng khớp với 1 món trong danh sách nhưng chưa click chọn
+    if (!foodToUse && foodQuery.trim()) {
+      const exactMatch = allFoods.find(
+        (f) => f.name.toLowerCase() === foodQuery.trim().toLowerCase()
+      );
+      if (exactMatch) {
+        foodToUse = exactMatch;
+      }
+    }
+
+    // Nếu chưa có trong danh sách, tự động gọi AI để tra cứu và thêm luôn!
+    if (!foodToUse) {
+      if (!foodQuery.trim()) {
+        setAiError('Vui lòng chọn hoặc nhập tên món ăn.');
+        return;
+      }
+      setIsAiLoading(true);
+      setAiError('');
+      try {
+        const apiKey = '';
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        const payload = {
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Ước tính hàm lượng dinh dưỡng trung bình trên 100g của món ăn Việt Nam: "${foodQuery.trim()}"`
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                foodName: { type: 'STRING' },
+                cal: { type: 'NUMBER' },
+                protein: { type: 'NUMBER' },
+                fat: { type: 'NUMBER' },
+                carb: { type: 'NUMBER' }
+              },
+              propertyOrdering: ['foodName', 'cal', 'protein', 'fat', 'carb']
+            }
+          }
+        };
+        const result = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const parsed = JSON.parse(result.candidates[0].content.parts[0].text);
+        foodToUse = {
+          id: `ai-${Date.now()}`,
+          name: parsed.foodName || foodQuery.trim(),
+          category: 'AI Tra cứu',
+          cal: Math.max(0, Number(parsed.cal) || 0),
+          protein: Math.max(0, Number(parsed.protein) || 0),
+          fat: Math.max(0, Number(parsed.fat) || 0),
+          carb: Math.max(0, Number(parsed.carb) || 0)
+        };
+        setCustomFoods((prev) => [foodToUse, ...prev]);
+      } catch (err) {
+        setAiError('Không tìm thấy món ăn trong CSDL và kết nối AI bị gián đoạn.');
+        setIsAiLoading(false);
+        return;
+      }
+      setIsAiLoading(false);
+    }
+
+    const newEntry = {
+      id: `entry-${Date.now()}`,
+      name: foodToUse.name,
+      grams,
+      mealType: mealTypeInput,
+      per100g: {
+        cal: foodToUse.cal,
+        protein: foodToUse.protein,
+        fat: foodToUse.fat,
+        carb: foodToUse.carb
+      }
+    };
+
+    setDailyLogs((prev) => ({
+      ...prev,
+      [selectedDate]: [...(prev[selectedDate] || []), newEntry]
+    }));
+
+    setFoodQuery('');
+    setSelectedFoodItem(null);
+    setShowDropdown(false);
+    setAiError('');
+  };
+
+  const handleDeleteEntry = (entryId) => {
+    setDailyLogs((prev) => {
+      const updated = (prev[selectedDate] || []).filter((item) => item.id !== entryId);
+      const nextLogs = { ...prev };
+      if (updated.length === 0) {
+        delete nextLogs[selectedDate];
+      } else {
+        nextLogs[selectedDate] = updated;
+      }
+      return nextLogs;
+    });
+  };
+
+  const handleSaveEditGrams = (entryId) => {
+    const newGrams = Number(editingGrams);
+    if (!newGrams || newGrams <= 0) return;
+    setDailyLogs((prev) => ({
+      ...prev,
+      [selectedDate]: (prev[selectedDate] || []).map((item) =>
+        item.id === entryId ? { ...item, grams: newGrams } : item
+      )
+    }));
+    setEditingEntryId(null);
+    setEditingGrams('');
+  };
+
+  // ==========================================================
+  // DỮ LIỆU LỊCH THEO DÕI (CALENDAR TRACKER)
+  // ==========================================================
+  const calendarGrid = useMemo(() => {
+    const { year, month } = calendarMonth;
+    const firstDayOfMonth = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Chuyển đổi để Thứ Hai là cột đầu tiên (0 = Thứ 2, ..., 6 = Chủ nhật)
+    const startWeekday = (firstDayOfMonth.getDay() + 6) % 7;
+
+    const cells = [];
+    for (let i = 0; i < startWeekday; i++) {
+      cells.push(null);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const entries = dailyLogs[dateKey] || [];
+      const totals = entries.length > 0 ? calculateDayTotals(entries) : null;
+      const status = totals ? evaluateStatus(totals.calories, macroTargets.totalCalories) : null;
+      cells.push({
+        day: d,
+        dateKey,
+        entriesCount: entries.length,
+        totals,
+        status
+      });
+    }
+    return cells;
+  }, [calendarMonth, dailyLogs, macroTargets.totalCalories]);
+
+  // Thống kê tổng hợp tháng hiện tại
+  const monthlyStats = useMemo(() => {
+    let loggedDays = 0;
+    let onTargetDays = 0;
+    let totalCaloriesConsumed = 0;
+
+    calendarGrid.forEach((cell) => {
+      if (cell && cell.totals && cell.entriesCount > 0) {
+        loggedDays += 1;
+        totalCaloriesConsumed += cell.totals.calories;
+        if (cell.status?.code === 'good') {
+          onTargetDays += 1;
+        }
+      }
+    });
+
+    return {
+      loggedDays,
+      onTargetDays,
+      avgCalories: loggedDays > 0 ? totalCaloriesConsumed / loggedDays : 0
+    };
+  }, [calendarGrid]);
+
+  // Tính nhẩm nhanh món đang chọn trên form
+  const previewCurrentSelection = useMemo(() => {
+    if (!selectedFoodItem) return null;
+    const g = Number(gramsInput) || 0;
+    const ratio = g / 100;
+    return {
+      cal: selectedFoodItem.cal * ratio,
+      proteinGrams: selectedFoodItem.protein * ratio,
+      proteinKcal: selectedFoodItem.protein * ratio * 4,
+      fatGrams: selectedFoodItem.fat * ratio,
+      fatKcal: selectedFoodItem.fat * ratio * 9,
+      carbGrams: selectedFoodItem.carb * ratio,
+      carbKcal: selectedFoodItem.carb * ratio * 4
+    };
+  }, [selectedFoodItem, gramsInput]);
+
+  const overallCalStatus = evaluateStatus(
+    currentDayTotals.calories,
+    macroTargets.totalCalories
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-emerald-500 selection:text-white pb-16">
+      {/* HEADER BAR GỌN GÀNG - ĐÃ XÓA THANH KÍCH HOẠT TAB */}
+      <header className="sticky top-0 z-30 backdrop-blur-xl bg-slate-950/85 border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+              <Flame className="w-5 h-5 text-slate-950 fill-slate-950" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-white via-emerald-200 to-teal-300 bg-clip-text text-transparent">
+                NutriCut VN
+              </h1>
+              <p className="text-xs text-slate-400">
+                Tính Calo giảm cân chuẩn công thức & Theo dõi Macro mỗi ngày
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {/* ============================================================
+            PHẦN 1: HỒ SƠ CHỈ SỐ & CÔNG THỨC TÍNH CALO / MACRO MỤC TIÊU
+        ============================================================ */}
+        <section className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-800/80">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  1. Tính Calo & Macro Cần Nạp Trong Ngày
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Điền chiều cao, cân nặng và chọn tạng người để tự động tính chỉ tiêu giảm cân
+                </p>
+              </div>
+            </div>
+
+            {macroTargets.bmi > 0 && (
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs">
+                <span className="text-slate-400">Chỉ số BMI:</span>
+                <strong className="text-emerald-400 text-sm">
+                  {macroTargets.bmi.toFixed(1)}
+                </strong>
+              </div>
+            )}
+          </div>
+
+          {/* Ô ĐIỀN CHIỀU CAO, CÂN NẶNG, TẠNG NGƯỜI (BÉO / GẦY) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Chiều cao */}
+            <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-4">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
+                <Ruler className="w-4 h-4 text-emerald-400" />
+                Chiều cao (cm)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="100"
+                  max="250"
+                  value={profile.height}
+                  onChange={(e) =>
+                    setProfile((prev) => ({ ...prev, height: e.target.value }))
+                  }
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-lg font-bold text-white focus:outline-none"
+                  placeholder="170"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">
+                  cm
+                </span>
+              </div>
+            </div>
+
+            {/* Cân nặng */}
+            <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-4">
+              <label className="flex items-center gap-2 text-xs font-medium text-slate-400 mb-2">
+                <Scale className="w-4 h-4 text-emerald-400" />
+                Cân nặng hiện tại (kg)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="25"
+                  max="250"
+                  step="0.5"
+                  value={profile.weight}
+                  onChange={(e) =>
+                    setProfile((prev) => ({ ...prev, weight: e.target.value }))
+                  }
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-lg font-bold text-white focus:outline-none"
+                  placeholder="72"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-semibold">
+                  kg
+                </span>
+              </div>
+            </div>
+
+            {/* Tạng người: Béo hoặc Gầy */}
+            <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-4">
+              <label className="block text-xs font-medium text-slate-400 mb-2">
+                Tùy chọn tính Protein (Béo / Gầy)
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfile((prev) => ({ ...prev, bodyType: 'beo' }))
+                  }
+                  className={`py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold transition text-center ${
+                    profile.bodyType === 'beo'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-500/10'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div>Béo</div>
+                  <div className="text-[10px] font-normal opacity-80">
+                    Đạm = Cân nặng × 2
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setProfile((prev) => ({ ...prev, bodyType: 'gay' }))
+                  }
+                  className={`py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-bold transition text-center ${
+                    profile.bodyType === 'gay'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-lg shadow-emerald-500/10'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <div>Gầy</div>
+                  <div className="text-[10px] font-normal opacity-80">
+                    Đạm = Cân nặng × 3
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* CHỌN KHỐI LƯỢNG VẬN ĐỘNG (30 / 32 / 35) */}
+          <div className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <label className="text-xs font-medium text-slate-300 flex items-center gap-2">
+                <Flame className="w-4 h-4 text-emerald-400" />
+                Khối lượng vận động trong ngày (Hệ số nhân tính Calo)
+              </label>
+              <span className="text-[11px] text-emerald-400 font-semibold">
+                Đang chọn: {macroTargets.activityObj.label} (Cân nặng × {macroTargets.activityMultiplier})
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {ACTIVITY_LEVELS.map((act) => {
+                const isSelected = profile.activityLevel === act.id;
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() =>
+                      setProfile((prev) => ({ ...prev, activityLevel: act.id }))
+                    }
+                    className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-500/20 border-emerald-500 text-white shadow-lg shadow-emerald-500/10'
+                        : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 w-full">
+                      <span className="text-xs sm:text-sm font-bold">
+                        {act.label}
+                      </span>
+                      <span
+                        className={`text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${
+                          isSelected
+                            ? 'bg-emerald-500 text-slate-950'
+                            : 'bg-slate-800 text-emerald-400'
+                        }`}
+                      >
+                        × {act.multiplier}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {act.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* KẾT QUẢ 4 CHỈ TIÊU CALO & MACRO CẦN NẠP KÈM CÔNG THỨC TRỰC TIẾP */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Tổng lượng Calo */}
+            <div className="bg-gradient-to-br from-emerald-500/15 via-slate-950 to-slate-950 border border-emerald-500/30 rounded-2xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4" />
+                  Tổng Calo cần nạp
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+                  Hệ số ×{macroTargets.activityMultiplier} (-500)
+                </span>
+              </div>
+              <div className="my-1">
+                <span className="text-2xl sm:text-3xl font-extrabold text-white">
+                  {Math.round(macroTargets.totalCalories)}
+                </span>
+                <span className="text-xs text-slate-400 ml-1.5">kcal / ngày</span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+                Công thức: <strong>({macroTargets.weight} × {macroTargets.activityMultiplier}) - 500</strong> ={' '}
+                {Math.round(macroTargets.rawTotalCalories)} kcal
+              </div>
+            </div>
+
+            {/* 2. Protein (Đạm) */}
+            <div className="bg-gradient-to-br from-rose-500/15 via-slate-950 to-slate-950 border border-rose-500/30 rounded-2xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-rose-300 flex items-center gap-1.5">
+                  <Beef className="w-4 h-4" />
+                  Protein (Đạm)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-medium">
+                  {profile.bodyType === 'beo' ? 'Option: Béo (×2)' : 'Option: Gầy (×3)'}
+                </span>
+              </div>
+              <div className="my-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold text-white">
+                  {macroTargets.proteinGrams.toFixed(1)}g
+                </span>
+                <span className="text-xs font-semibold text-rose-300">
+                  ({Math.round(macroTargets.proteinCalories)} kcal)
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+                Khối lượng: <strong>{macroTargets.weight} × {macroTargets.proteinMultiplier}</strong> • Calo:{' '}
+                <strong>{macroTargets.proteinGrams.toFixed(1)} × 4</strong>
+              </div>
+            </div>
+
+            {/* 3. Fat (Chất béo) */}
+            <div className="bg-gradient-to-br from-amber-500/15 via-slate-950 to-slate-950 border border-amber-500/30 rounded-2xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                  <Droplets className="w-4 h-4" />
+                  Fat (Chất béo)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-medium">
+                  Cân nặng × 0.77
+                </span>
+              </div>
+              <div className="my-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold text-white">
+                  {macroTargets.fatGrams.toFixed(1)}g
+                </span>
+                <span className="text-xs font-semibold text-amber-300">
+                  ({Math.round(macroTargets.fatCalories)} kcal)
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+                Khối lượng: <strong>{macroTargets.weight} × 0.77</strong> • Calo:{' '}
+                <strong>{macroTargets.fatGrams.toFixed(1)} × 9</strong>
+              </div>
+            </div>
+
+            {/* 4. Carb (Tinh bột) */}
+            <div className="bg-gradient-to-br from-sky-500/15 via-slate-950 to-slate-950 border border-sky-500/30 rounded-2xl p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-sky-300 flex items-center gap-1.5">
+                  <Wheat className="w-4 h-4" />
+                  Carb (Tinh bột)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-medium">
+                  Calo còn lại / 4
+                </span>
+              </div>
+              <div className="my-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-extrabold text-white">
+                  {macroTargets.carbGrams.toFixed(1)}g
+                </span>
+                <span className="text-xs font-semibold text-sky-300">
+                  ({Math.round(macroTargets.carbCalories)} kcal)
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80">
+                Công thức: <strong>({Math.round(macroTargets.totalCalories)} - {Math.round(macroTargets.proteinCalories)} - {Math.round(macroTargets.fatCalories)}) / 4</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================================================
+            PHẦN 2 & 3: NHẬT KÝ MÓN ĂN TRONG NGÀY + LỊCH THEO DÕI THÁNG
+        ============================================================ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* CỘT TRÁI (7 CỘT): KIỂM TRA CHỈ TIÊU & NHẬP MÓN ĂN */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* BẢNG KIỂM TRA TIẾN ĐỘ HOÀN THÀNH CHỈ TIÊU TRONG NGÀY */}
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    2. Lượng Calo & Macro Đã Nạp ({formatDisplayDate(selectedDate)})
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Tự động đối chiếu tổng các món đã ăn với chỉ tiêu giảm cân trong ngày
+                  </p>
+                </div>
+                <span
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 ${overallCalStatus.badgeBg}`}
+                >
+                  {overallCalStatus.code === 'good' && <CheckCircle2 className="w-4 h-4" />}
+                  {overallCalStatus.code === 'under' && <AlertTriangle className="w-4 h-4" />}
+                  {overallCalStatus.code === 'over' && <XCircle className="w-4 h-4" />}
+                  {overallCalStatus.label} ({Math.round(overallCalStatus.percent)}%)
+                </span>
+              </div>
+
+              {/* 4 Thanh tiến độ: Calo, Protein, Fat, Carb */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    label: 'Tổng Calo đã nạp',
+                    current: currentDayTotals.calories,
+                    target: macroTargets.totalCalories,
+                    unit: 'kcal',
+                    barColor: 'bg-emerald-500',
+                    textColor: 'text-emerald-400'
+                  },
+                  {
+                    label: 'Protein (Đạm)',
+                    current: currentDayTotals.proteinGrams,
+                    target: macroTargets.proteinGrams,
+                    subCal: currentDayTotals.proteinCalories,
+                    unit: 'g',
+                    barColor: 'bg-rose-500',
+                    textColor: 'text-rose-400'
+                  },
+                  {
+                    label: 'Fat (Chất béo)',
+                    current: currentDayTotals.fatGrams,
+                    target: macroTargets.fatGrams,
+                    subCal: currentDayTotals.fatCalories,
+                    unit: 'g',
+                    barColor: 'bg-amber-500',
+                    textColor: 'text-amber-400'
+                  },
+                  {
+                    label: 'Carb (Tinh bột)',
+                    current: currentDayTotals.carbGrams,
+                    target: macroTargets.carbGrams,
+                    subCal: currentDayTotals.carbCalories,
+                    unit: 'g',
+                    barColor: 'bg-sky-500',
+                    textColor: 'text-sky-400'
+                  }
+                ].map((item) => {
+                  const pct =
+                    item.target > 0
+                      ? Math.min(100, Math.round((item.current / item.target) * 100))
+                      : 0;
+                  const diff = item.target - item.current;
+                  return (
+                    <div
+                      key={item.label}
+                      className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-3.5 space-y-2"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-300">{item.label}</span>
+                        <span className={`font-bold ${item.textColor}`}>
+                          {item.unit === 'kcal'
+                            ? Math.round(item.current)
+                            : item.current.toFixed(1)}
+                          {item.unit} /{' '}
+                          {item.unit === 'kcal'
+                            ? Math.round(item.target)
+                            : item.target.toFixed(1)}
+                          {item.unit}
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${item.barColor} transition-all duration-300`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>
+                          {item.subCal !== undefined
+                            ? `Quy đổi: ${Math.round(item.subCal)} kcal`
+                            : `Hoàn thành: ${pct}%`}
+                        </span>
+                        <span>
+                          {diff >= 0
+                            ? `Còn thiếu ${
+                                item.unit === 'kcal' ? Math.round(diff) : diff.toFixed(1)
+                              }${item.unit}`
+                            : `Vượt ${
+                                item.unit === 'kcal'
+                                  ? Math.round(Math.abs(diff))
+                                  : Math.abs(diff).toFixed(1)
+                              }${item.unit}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* PHẦN ĐIỀN MÓN ĂN: HIỂN THỊ TRỰC TIẾP CẢ 2 CÁCH NHẬP SONG SONG */}
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800/80">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <Utensils className="w-5 h-5 text-emerald-400" />
+                    Thêm Món Ăn Đã Nạp Trong Ngày
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Chọn 1 trong 2 cách bên dưới: Nhập ước lượng để AI tự tính hoặc nhập số gram chính xác
+                  </p>
+                </div>
+                <span className="text-xs px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-slate-300">
+                  Ngày ghi: <strong className="text-emerald-400">{formatDisplayDate(selectedDate)}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {/* CÁCH 1: ĐIỀN MÓN ĂN THEO KHẨU PHẦN ƯỚC LƯỢNG (KHÔNG BIẾT SỐ GRAM) */}
+                <div className="bg-gradient-to-b from-violet-500/10 via-slate-950/90 to-slate-950/90 border border-violet-500/30 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 rounded-xl bg-violet-500/20 border border-violet-500/40 text-violet-300">
+                          <Sparkles className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">
+                            Cách 1: Ước lượng khẩu phần (AI Tự Tính)
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            Dành cho khi bạn không có cân hoặc không rõ bao nhiêu gram
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleEstimatePortionWithAI} className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Mô tả món ăn & lượng ước chừng đã ăn
+                        </label>
+                        <input
+                          type="text"
+                          value={estimateQuery}
+                          onChange={(e) => {
+                            setEstimateQuery(e.target.value);
+                            if (estimateError) setEstimateError('');
+                          }}
+                          placeholder="VD: 1 tô bún bò Huế, nửa ổ bánh mì thịt, 2 quả trứng..."
+                          className="w-full bg-slate-900 border border-slate-700/80 focus:border-violet-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Gợi ý mẫu nhanh để bấm thử */}
+                      <div>
+                        <span className="block text-[11px] text-slate-400 mb-1.5">
+                          Gợi ý mẫu nhanh (chạm để điền):
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {QUICK_ESTIMATE_SAMPLES.map((sample) => (
+                            <button
+                              key={sample}
+                              type="button"
+                              onClick={() => {
+                                setEstimateQuery(sample);
+                                setEstimateError('');
+                              }}
+                              className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-violet-500/20 text-slate-300 hover:text-violet-200 border border-slate-800 hover:border-violet-500/40 transition"
+                            >
+                              + {sample}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                          Bữa ăn
+                        </label>
+                        <select
+                          value={estimateMealType}
+                          onChange={(e) => setEstimateMealType(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 focus:border-violet-400 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
+                        >
+                          {MEAL_TYPES.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {estimateError && (
+                        <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>{estimateError}</span>
+                        </div>
+                      )}
+
+                      {estimateSuccess && (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>{estimateSuccess}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEstimateSuccess('')}
+                            className="text-slate-400 hover:text-white"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={isEstimatingAI}
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 transition disabled:opacity-60"
+                      >
+                        {isEstimatingAI ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>AI đang ước tính số gram & Calo...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            <span>Thêm & Để AI Ước Lượng</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {/* CÁCH 2: ĐIỀN MÓN ĂN KÈM KHỐI LƯỢNG CHÍNH XÁC (GRAM) */}
+                <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                        <Scale className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Cách 2: Nhập chính xác theo khối lượng (Gram)
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          Chọn từ danh sách món Việt có sẵn hoặc nhập món mới kèm số gram
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleAddFoodEntry} className="space-y-3">
+                      {/* Ô tìm / nhập tên món ăn */}
+                      <div className="relative">
+                        <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                          Tên món ăn (chọn gợi ý hoặc nhập tên bất kỳ)
+                        </label>
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={foodQuery}
+                            onFocus={() => setShowDropdown(true)}
+                            onChange={(e) => {
+                              setFoodQuery(e.target.value);
+                              setSelectedFoodItem(null);
+                              setShowDropdown(true);
+                            }}
+                            placeholder="VD: Ức gà luộc, Cơm gạo lứt, Cá hồi..."
+                            className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl pl-10 pr-9 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none"
+                          />
+                          {foodQuery && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFoodQuery('');
+                                setSelectedFoodItem(null);
+                              }}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Dropdown gợi ý món ăn */}
+                        {showDropdown && (
+                          <div className="absolute z-20 mt-1.5 w-full max-h-56 overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl divide-y divide-slate-800/80">
+                            {filteredFoods.length > 0 ? (
+                              filteredFoods.map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedFoodItem(item);
+                                    setFoodQuery(item.name);
+                                    setShowDropdown(false);
+                                  }}
+                                  className="w-full px-3.5 py-2.5 text-left hover:bg-slate-800/90 transition flex items-center justify-between gap-2"
+                                >
+                                  <div>
+                                    <div className="text-xs sm:text-sm font-semibold text-white">
+                                      {item.name}
+                                    </div>
+                                    <div className="text-[11px] text-slate-400">
+                                      100g: <span className="text-emerald-400">{item.cal} kcal</span> • P:{' '}
+                                      {item.protein}g • F: {item.fat}g • C: {item.carb}g
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 shrink-0">
+                                    {item.category}
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="p-3 text-center">
+                                <p className="text-xs text-slate-300">
+                                  Món <strong>"{foodQuery}"</strong> chưa có sẵn. Nhấn <strong>"Thêm món theo Gram"</strong> để AI tự tra cứu chỉ số trên 100g.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Khối lượng đã ăn (gram) */}
+                        <div>
+                          <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                            Khối lượng (gram)
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="5000"
+                            value={gramsInput}
+                            onChange={(e) => setGramsInput(e.target.value)}
+                            placeholder="150"
+                            className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-sm font-bold text-white focus:outline-none"
+                          />
+                        </div>
+
+                        {/* Bữa ăn */}
+                        <div>
+                          <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                            Bữa ăn
+                          </label>
+                          <select
+                            value={mealTypeInput}
+                            onChange={(e) => setMealTypeInput(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none"
+                          >
+                            {MEAL_TYPES.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Xem trước hàm lượng dinh dưỡng của món đang chọn */}
+                      {previewCurrentSelection && (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span className="text-slate-300">
+                            <strong>{gramsInput}g</strong>:
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2.5 font-semibold">
+                            <span className="text-emerald-300">
+                              {Math.round(previewCurrentSelection.cal)} kcal
+                            </span>
+                            <span className="text-rose-300">
+                              P: {previewCurrentSelection.proteinGrams.toFixed(1)}g
+                            </span>
+                            <span className="text-amber-300">
+                              F: {previewCurrentSelection.fatGrams.toFixed(1)}g
+                            </span>
+                            <span className="text-sky-300">
+                              C: {previewCurrentSelection.carbGrams.toFixed(1)}g
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {aiError && (
+                        <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>{aiError}</span>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={isAiLoading}
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition"
+                      >
+                        {isAiLoading ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Đang tra cứu dữ liệu món ăn...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4 stroke-[2.5]" />
+                            <span>Thêm Món Theo Gram</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* DANH SÁCH CÁC MÓN ĐÃ ĂN TRONG NGÀY ĐANG CHỌN */}
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <Utensils className="w-5 h-5 text-emerald-400" />
+                  Các món đã ăn ({currentDayEntries.length} món)
+                </h3>
+                {currentDayEntries.length > 0 && (
+                  <span className="text-xs text-slate-400">
+                    Tổng khối lượng:{' '}
+                    <strong className="text-slate-200">
+                      {currentDayEntries.reduce((s, i) => s + Number(i.grams || 0), 0)}g
+                    </strong>
+                  </span>
+                )}
+              </div>
+
+              {currentDayEntries.length === 0 ? (
+                <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-slate-800 bg-slate-950/40">
+                  <Utensils className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-slate-300">
+                    Chưa có món ăn nào trong ngày {formatDisplayDate(selectedDate)}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {currentDayEntries.map((item) => {
+                    const ratio = (Number(item.grams) || 0) / 100;
+                    const itemCal = item.per100g.cal * ratio;
+                    const itemP = item.per100g.protein * ratio;
+                    const itemF = item.per100g.fat * ratio;
+                    const itemC = item.per100g.carb * ratio;
+                    const mealBadge =
+                      MEAL_TYPES.find((m) => m.id === item.mealType) || MEAL_TYPES[1];
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/90 hover:border-slate-700 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${mealBadge.color}`}
+                            >
+                              {mealBadge.label}
+                            </span>
+                            <h4 className="font-bold text-sm text-white">{item.name}</h4>
+                            {item.portionNote && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/30 flex items-center gap-1">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                {item.portionNote}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                            <span className="font-bold text-emerald-400">
+                              {Math.round(itemCal)} kcal
+                            </span>
+                            <span className="text-rose-300">
+                              Protein: <strong>{itemP.toFixed(1)}g</strong> ({Math.round(itemP * 4)} kcal)
+                            </span>
+                            <span className="text-amber-300">
+                              Fat: <strong>{itemF.toFixed(1)}g</strong> ({Math.round(itemF * 9)} kcal)
+                            </span>
+                            <span className="text-sky-300">
+                              Carb: <strong>{itemC.toFixed(1)}g</strong> ({Math.round(itemC * 4)} kcal)
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          {editingEntryId === item.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number"
+                                min="1"
+                                value={editingGrams}
+                                onChange={(e) => setEditingGrams(e.target.value)}
+                                className="w-20 bg-slate-900 border border-emerald-500 rounded-lg px-2 py-1 text-xs font-bold text-white"
+                              />
+                              <span className="text-xs text-slate-400">g</span>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEditGrams(item.id)}
+                                className="p-1.5 rounded-lg bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingEntryId(null)}
+                                className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingEntryId(item.id);
+                                  setEditingGrams(String(item.grams));
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 flex items-center gap-1 transition"
+                              >
+                                <span>{item.grams}g</span>
+                                <Edit3 className="w-3 h-3 text-slate-400" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEntry(item.id)}
+                                className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition"
+                                title="Xóa món ăn"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CỘT PHẢI (5 CỘT): LỊCH THEO DÕI (CALENDAR TRACKER) & THỐNG KÊ */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                    <CalendarIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      3. Lịch Theo Dõi Giảm Cân
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Chọn ngày trên lịch để xem hoặc điền thức ăn
+                    </p>
+                  </div>
+                </div>
+
+                {/* Chuyển tháng */}
+                <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCalendarMonth((prev) => {
+                        const d = new Date(prev.year, prev.month - 1, 1);
+                        return { year: d.getFullYear(), month: d.getMonth() };
+                      })
+                    }
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="px-2.5 text-xs sm:text-sm font-bold text-white">
+                    Tháng {calendarMonth.month + 1} / {calendarMonth.year}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCalendarMonth((prev) => {
+                        const d = new Date(prev.year, prev.month + 1, 1);
+                        return { year: d.getFullYear(), month: d.getMonth() };
+                      })
+                    }
+                    className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Thống kê nhanh trong tháng */}
+              <div className="grid grid-cols-3 gap-2.5 mb-4">
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-center">
+                  <div className="text-xs text-slate-400">Ngày đã ghi</div>
+                  <div className="text-lg font-extrabold text-white mt-0.5">
+                    {monthlyStats.loggedDays} ngày
+                  </div>
+                </div>
+                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3 text-center">
+                  <div className="text-xs text-emerald-300">Đạt chỉ tiêu</div>
+                  <div className="text-lg font-extrabold text-emerald-400 mt-0.5">
+                    {monthlyStats.onTargetDays} ngày
+                  </div>
+                </div>
+                <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 text-center">
+                  <div className="text-xs text-slate-400">TB Calo/ngày</div>
+                  <div className="text-lg font-extrabold text-white mt-0.5">
+                    {Math.round(monthlyStats.avgCalories)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tiêu đề các thứ trong tuần */}
+              <div className="grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-slate-400 mb-2">
+                {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((d) => (
+                  <div key={d} className="py-1">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              {/* Lưới ngày trong tháng */}
+              <div className="grid grid-cols-7 gap-1.5">
+                {calendarGrid.map((cell, index) => {
+                  if (!cell) {
+                    return <div key={`empty-${index}`} className="h-16 sm:h-20 rounded-xl bg-slate-950/30" />;
+                  }
+
+                  const isSelected = cell.dateKey === selectedDate;
+                  const isToday = cell.dateKey === todayKey;
+                  const hasData = cell.entriesCount > 0;
+
+                  let cellStyle = 'bg-slate-950/80 border-slate-800/80 text-slate-300 hover:border-slate-700';
+                  let dotColor = 'bg-slate-600';
+
+                  if (hasData && cell.status) {
+                    if (cell.status.code === 'good') {
+                      cellStyle = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200';
+                      dotColor = 'bg-emerald-400';
+                    } else if (cell.status.code === 'under') {
+                      cellStyle = 'bg-amber-500/15 border-amber-500/40 text-amber-200';
+                      dotColor = 'bg-amber-400';
+                    } else if (cell.status.code === 'over') {
+                      cellStyle = 'bg-rose-500/15 border-rose-500/40 text-rose-200';
+                      dotColor = 'bg-rose-400';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={cell.dateKey}
+                      type="button"
+                      onClick={() => setSelectedDate(cell.dateKey)}
+                      className={`h-16 sm:h-20 p-1.5 rounded-2xl border text-left flex flex-col justify-between transition relative ${cellStyle} ${
+                        isSelected ? 'ring-2 ring-white border-transparent shadow-lg' : ''
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span
+                          className={`text-xs font-bold ${
+                            isToday
+                              ? 'bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded-md'
+                              : ''
+                          }`}
+                        >
+                          {cell.day}
+                        </span>
+                        {hasData && <span className={`w-2 h-2 rounded-full ${dotColor}`} />}
+                      </div>
+
+                      {hasData ? (
+                        <div className="w-full">
+                          <div className="text-[11px] font-extrabold leading-tight truncate">
+                            {Math.round(cell.totals.calories)}
+                            <span className="text-[9px] font-normal opacity-75"> kcal</span>
+                          </div>
+                          <div className="text-[9px] opacity-80 truncate">
+                            P:{Math.round(cell.totals.proteinGrams)}g • {cell.entriesCount} món
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-600">Trống</div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Chú thích màu sắc trên lịch */}
+              <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <span>Đạt chỉ tiêu (85-108%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span>Còn thiếu (&lt;85%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+                  <span>Vượt mức (&gt;108%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* BẢNG TỔNG HỢP LỊCH SỬ CÁC NGÀY ĐÃ ĐIỀN THỨC ĂN */}
+            <div className="bg-slate-900/90 border border-slate-800/90 rounded-3xl p-5 sm:p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                  <Award className="w-4 h-4 text-emerald-400" />
+                  Nhật ký các ngày đã ghi nhận
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(todayKey)}
+                  className="text-xs text-emerald-400 hover:underline font-medium"
+                >
+                  Về hôm nay
+                </button>
+              </div>
+
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                {Object.keys(dailyLogs)
+                  .filter((dateKey) => (dailyLogs[dateKey] || []).length > 0)
+                  .sort((a, b) => b.localeCompare(a))
+                  .map((dateKey) => {
+                    const entries = dailyLogs[dateKey];
+                    const totals = calculateDayTotals(entries);
+                    const st = evaluateStatus(totals.calories, macroTargets.totalCalories);
+                    const isSelected = dateKey === selectedDate;
+
+                    return (
+                      <button
+                        key={dateKey}
+                        type="button"
+                        onClick={() => setSelectedDate(dateKey)}
+                        className={`w-full p-3 rounded-2xl border text-left transition flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? 'bg-emerald-500/15 border-emerald-500/50'
+                            : 'bg-slate-950/70 border-slate-800/90 hover:border-slate-700'
+                        }`}
+                      >
+                        <div>
+                          <div className="text-xs font-bold text-white flex items-center gap-2">
+                            <span>{formatDisplayDate(dateKey)}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                              {entries.length} món
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-1">
+                            Tổng: <strong className="text-emerald-300">{Math.round(totals.calories)} kcal</strong> • P:{' '}
+                            {totals.proteinGrams.toFixed(0)}g • F: {totals.fatGrams.toFixed(0)}g • C:{' '}
+                            {totals.carbGrams.toFixed(0)}g
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-xl border ${st.badgeBg}`}>
+                            {st.label}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-slate-500" />
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
